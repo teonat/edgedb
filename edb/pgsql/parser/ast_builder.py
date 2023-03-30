@@ -950,8 +950,14 @@ def _build_a_expr(n: Node, c: Context) -> pgast.BaseExpr:
 
 def _build_func_call(n: Node, c: Context) -> pgast.FuncCall:
     n = _unwrap(n, "FuncCall")
+
+    name = tuple(_list(n, c, "funcname", _build_str))
+    # Substitute our custom function in place of "format_type".
+    if name == ('pg_catalog', 'format_type'):
+        name = ('edgedb', '_format_type')
+
     return pgast.FuncCall(
-        name=tuple(_list(n, c, "funcname", _build_str)),
+        name=name,
         args=_maybe_list(n, c, "args", _build_base_expr) or [],
         agg_order=_maybe_list(n, c, "aggOrder", _build_sort_by),
         agg_filter=_maybe(n, c, "aggFilter", _build_base_expr),

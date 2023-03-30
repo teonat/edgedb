@@ -1440,6 +1440,57 @@ class StableDumpTestCase(QueryTestCase, CLITestCaseMixin):
             await drop_db(self.con, q_tgt_dbname)
 
 
+class StablePGDumpTestCase(DatabaseTestCase):
+
+    BASE_TEST_CLASS = True
+    ISOLATED_METHODS = False
+    STABLE_DUMP = True
+    TRANSACTION_ISOLATION = False
+
+    def run_pg_dump(self, *args, input: Optional[str] = None) -> None:
+        conn_args = self.get_connect_args()
+        self.run_pg_dump_on_connection(conn_args, *args, input=input)
+
+    @classmethod
+    def run_pg_dump_on_connection(
+        cls, conn_args: Dict[str, Any], *args, input: Optional[str] = None
+    ) -> None:
+        cmd_args = [
+            '--host', conn_args['host'],
+            '--port', str(conn_args['port']),
+            # '--tls-ca-file', conn_args['tls_ca_file'],
+            '-U', 'edgedb',
+        ]
+        cmd_args += args
+        cmd = ['pg_dump'] + cmd_args
+        try:
+            subprocess.run(
+                cmd,
+                input=input.encode() if input else None,
+                check=True,
+                capture_output=True,
+            )
+        except subprocess.CalledProcessError as e:
+            output = '\n'.join(getattr(out, 'decode', out.__str__)()
+                               for out in [e.output, e.stderr] if out)
+            raise AssertionError(
+                f'command {cmd} returned non-zero exit status {e.returncode}'
+                f'\n{output}'
+            ) from e
+
+
+    async def check_dump_restore(self, check_method):
+        src_dbname = self.get_database_name()
+        tgt_dbname = f'{src_dbname}_restored'
+        q_tgt_dbname = qlquote.quote_ident(tgt_dbname)
+        with tempfile.NamedTemporaryFile() as f:
+            await asyncio.to_thread(
+                self.run_pg_dump, '-d', src_dbname, '-f', f.name
+            )
+
+            await check_method(self, f.read())
+
+
 def get_test_cases_setup(
     cases: Iterable[unittest.TestCase]
 ) -> List[Tuple[unittest.TestCase, DatabaseName, SetupScript]]:
