@@ -158,6 +158,11 @@ Querying
     },
   }
 
+.. note::
+
+    Specifying link properties of a computed backlink in your shape is
+    supported as of EdgeDB 3.0.
+
 .. list-table::
   :class: seealso
 
