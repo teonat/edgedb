@@ -22,6 +22,7 @@ Schema
     globals
     access_policies
     functions
+    mutation_rewrites
     inheritance
     extensions
     future

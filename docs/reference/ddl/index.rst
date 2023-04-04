@@ -19,6 +19,7 @@ DDL
     globals
     access_policies
     functions
+    mutation_rewrites
     extensions
     future
     migrations
