@@ -1456,12 +1456,16 @@ class StablePGDumpTestCase(DatabaseTestCase):
         cls, conn_args: Dict[str, Any], *args, input: Optional[str] = None
     ) -> None:
         cmd_args = [
-            '--host', conn_args['host'],
-            '--port', str(conn_args['port']),
+            '--dbname',
+            f"postgres://edgedb@{conn_args['host']}:{conn_args['port']}"
+            f"/{args[1]}"
+            f"?tls_ca_file_file={conn_args['tls_ca_file']}",
+            # '--host', conn_args['host'],
+            # '--port', str(conn_args['port']),
             # '--tls-ca-file', conn_args['tls_ca_file'],
-            '-U', 'edgedb',
+            # '-U', 'edgedb',
         ]
-        cmd_args += args
+        cmd_args += args[2:]
         cmd = ['pg_dump'] + cmd_args
         try:
             subprocess.run(
